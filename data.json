@@ -1,0 +1,32 @@
+[
+  {
+    "id": "t2gwkwc5omrioaa3y",
+    "name": "Aero",
+    "tasks": []
+  },
+  {
+    "id": "tb9hlas90mrioaibu",
+    "name": "Brakes",
+    "tasks": []
+  },
+  {
+    "id": "t0web3tegmrioalbx",
+    "name": "Chassis",
+    "tasks": []
+  },
+  {
+    "id": "tpwsb020imrioarjz",
+    "name": "Electrical",
+    "tasks": []
+  },
+  {
+    "id": "thk1w6zgamriob5qj",
+    "name": "Suspension",
+    "tasks": []
+  },
+  {
+    "id": "t60yauc5emriob910",
+    "name": "Powertrain",
+    "tasks": []
+  }
+]
