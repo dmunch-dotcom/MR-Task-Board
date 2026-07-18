@@ -360,6 +360,7 @@
     flex:1;
     min-width:0;
     word-wrap:break-word;
+    overflow-wrap:anywhere;
   }
   .card-title:hover{background:var(--not-started-soft);}
   .card-title:focus{background:var(--accent-soft);}
@@ -395,6 +396,8 @@
     padding:2px 4px;
     margin-left:-4px;
     margin-right:-4px;
+    word-wrap:break-word;
+    overflow-wrap:anywhere;
   }
   .card-desc:hover{background:var(--not-started-soft);}
   .card-desc:focus{background:var(--accent-soft);}
@@ -643,6 +646,8 @@
 
   .cal-day{
     min-height:96px;
+    max-height:96px;
+    overflow:hidden;
     border:1px solid var(--border);
     border-radius:10px;
     padding:6px;
@@ -678,16 +683,21 @@
     padding:3px 6px;
     border-radius:6px;
     cursor:pointer;
-    overflow:hidden;
-    white-space:nowrap;
-    text-overflow:ellipsis;
     border:none;
     text-align:left;
     width:100%;
+    min-width:0;
     font-family:'Inter',sans-serif;
   }
   .cal-task .cal-task-dot{
     width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  }
+  .cal-task .cal-task-title{
+    flex:1 1 auto;
+    min-width:0;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
   }
   .cal-task.s-not-started{background:var(--not-started-soft);color:var(--not-started);}
   .cal-task.s-in-progress{background:var(--in-progress-soft);color:var(--in-progress);}
@@ -1104,7 +1114,8 @@
 
       let tasksHtml = dayTasks.slice(0, MAX_VISIBLE).map(t => {
         const title = t.title ? escapeHtml(t.title) : "Untitled task";
-        return '<button type="button" class="cal-task s-'+t.status+(t.status==="completed"?" completed-title":"")+'" data-task-id="'+t.id+'" title="'+title+'"><span class="cal-task-dot"></span>'+title+'</button>';
+        const titleAttr = title.replace(/"/g, '&quot;');
+        return '<button type="button" class="cal-task s-'+t.status+(t.status==="completed"?" completed-title":"")+'" data-task-id="'+t.id+'" title="'+titleAttr+'"><span class="cal-task-dot"></span><span class="cal-task-title">'+title+'</span></button>';
       }).join('');
 
       if(dayTasks.length > MAX_VISIBLE){
@@ -1410,6 +1421,30 @@
       const id = e.dataTransfer.getData('text/plain');
       moveCard(id, status);
     });
+  });
+
+  // Normalize paste into any editable field (task title/description, board tab
+  // name) so pasted content always adopts the board's own styling instead of
+  // carrying over fonts/colors/bold/links copied from elsewhere. Delegated on
+  // document so it covers cards and tabs even though they're re-rendered often.
+  document.addEventListener('paste', function(e){
+    const target = e.target;
+    if(!target || target.isContentEditable !== true) return;
+    e.preventDefault();
+    const clipboard = e.clipboardData || window.clipboardData;
+    const text = clipboard ? clipboard.getData('text/plain') : '';
+    if(document.queryCommandSupported && document.queryCommandSupported('insertText')){
+      document.execCommand('insertText', false, text);
+    } else {
+      const sel = window.getSelection();
+      if(!sel || !sel.rangeCount) return;
+      sel.deleteFromDocument();
+      const range = sel.getRangeAt(0);
+      range.insertNode(document.createTextNode(text));
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
   });
 
   // Initial load and render
