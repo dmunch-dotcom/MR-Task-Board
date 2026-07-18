@@ -646,8 +646,6 @@
 
   .cal-day{
     min-height:96px;
-    max-height:96px;
-    overflow:hidden;
     border:1px solid var(--border);
     border-radius:10px;
     padding:6px;
@@ -1101,7 +1099,6 @@
     const totalCells = Math.ceil((firstOfMonth.getDay() + daysInMonth) / 7) * 7;
 
     const today = new Date();
-    const MAX_VISIBLE = 3;
     let cellsHtml = "";
 
     for(let i = 0; i < totalCells; i++){
@@ -1112,15 +1109,11 @@
       const key = fmtDateKey(cellDate);
       const dayTasks = tasksByDate[key] || [];
 
-      let tasksHtml = dayTasks.slice(0, MAX_VISIBLE).map(t => {
+      let tasksHtml = dayTasks.map(t => {
         const title = t.title ? escapeHtml(t.title) : "Untitled task";
         const titleAttr = title.replace(/"/g, '&quot;');
         return '<button type="button" class="cal-task s-'+t.status+(t.status==="completed"?" completed-title":"")+'" data-task-id="'+t.id+'" title="'+titleAttr+'"><span class="cal-task-dot"></span><span class="cal-task-title">'+title+'</span></button>';
       }).join('');
-
-      if(dayTasks.length > MAX_VISIBLE){
-        tasksHtml += '<span class="cal-more">+'+(dayTasks.length - MAX_VISIBLE)+' more</span>';
-      }
 
       cellsHtml +=
         '<div class="cal-day'+(outside?' outside':'')+(isToday?' today':'')+'">'+
