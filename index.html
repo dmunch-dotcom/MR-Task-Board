@@ -588,6 +588,8 @@
 
   .claim-modal .danger-btn{background:#dc2626;}
   .claim-modal .danger-btn:hover{background:#b91c1c;}
+  .claim-modal button:disabled{opacity:.45;cursor:not-allowed;}
+  .claim-modal .danger-btn:disabled:hover{background:#dc2626;}
 
   /* ---- Calendar view ---- */
   .calendar-wrap{
@@ -1266,9 +1268,10 @@
   <div class="claim-modal">
     <h2>Delete board?</h2>
     <p id="deleteBoardMessage">This removes all of its tasks. This can't be undone.</p>
+    <input type="text" id="deleteBoardInput" placeholder="Type your name to confirm" autocomplete="off">
     <div class="modal-actions">
       <button class="cancel-btn" id="deleteBoardCancel">Cancel</button>
-      <button class="claim-btn danger-btn" id="deleteBoardConfirm">Delete board</button>
+      <button class="claim-btn danger-btn" id="deleteBoardConfirm" disabled>Delete board</button>
     </div>
   </div>
 </div>
@@ -1854,6 +1857,14 @@
 
   let pendingDeleteId = null;
 
+  function deleteNameIsValid(){
+    return document.getElementById('deleteBoardInput').value.trim().length >= 2;
+  }
+
+  function refreshDeleteConfirmState(){
+    document.getElementById('deleteBoardConfirm').disabled = !deleteNameIsValid();
+  }
+
   function deleteBoard(id){
     if(boards.length <= 1) return;
     const board = boards.find(b => b.id === id);
@@ -1861,16 +1872,26 @@
     pendingDeleteId = id;
     document.getElementById('deleteBoardMessage').textContent =
       'Delete "' + board.name + '"? This removes all of its tasks. This can\'t be undone.';
+    const input = document.getElementById('deleteBoardInput');
+    input.value = '';
+    refreshDeleteConfirmState();
     document.getElementById('deleteBoardOverlay').classList.add('open');
+    setTimeout(() => input.focus(), 30);
   }
 
   function closeDeleteBoardModal(){
     document.getElementById('deleteBoardOverlay').classList.remove('open');
+    document.getElementById('deleteBoardInput').value = '';
+    refreshDeleteConfirmState();
     pendingDeleteId = null;
   }
 
   function confirmDeleteBoard(){
     if(!pendingDeleteId) return closeDeleteBoardModal();
+    if(!deleteNameIsValid()){
+      document.getElementById('deleteBoardInput').focus();
+      return;
+    }
     const id = pendingDeleteId;
     boards = boards.filter(b => b.id !== id);
     ganttOverlayBoardIds.delete(id);
@@ -1887,6 +1908,11 @@
     if(e.target === this) closeDeleteBoardModal();
   });
   document.getElementById('deleteBoardConfirm').addEventListener('click', confirmDeleteBoard);
+  document.getElementById('deleteBoardInput').addEventListener('input', refreshDeleteConfirmState);
+  document.getElementById('deleteBoardInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') confirmDeleteBoard();
+    if(e.key === 'Escape') closeDeleteBoardModal();
+  });
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && document.getElementById('deleteBoardOverlay').classList.contains('open')){
       closeDeleteBoardModal();
