@@ -1,19 +1,24 @@
 const mongoose = require('mongoose');
 
 // Tasks are embedded documents inside a board, matching the shape the
-// front-end already works with: { id, title, description, due, status, assignee }
+// front-end already works with:
+// { id, title, description, start, due, status, assignee, tags }
+// The order of tasks within this array is the card order the client set
+// (including drag-to-reorder within a column), so it is persisted as sent.
 const TaskSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
     title: { type: String, default: '' },
     description: { type: String, default: '' },
+    start: { type: String, default: '' }, // 'YYYY-MM-DD' string; optional Gantt bar start
     due: { type: String, default: '' }, // stored as 'YYYY-MM-DD' string, same as the <input type="date"> value
     status: {
       type: String,
       enum: ['not-started', 'in-progress', 'completed'],
       default: 'not-started'
     },
-    assignee: { type: String, default: '' }
+    assignee: { type: String, default: '' },
+    tags: { type: [String], default: [] }
   },
   { _id: false } // client already generates its own 'id', no need for a separate Mongo _id per task
 );

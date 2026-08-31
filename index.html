@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Minutemen Racing Tasks</title>
+<link rel="icon" id="favicon" type="image/png" href="assets/mr_logo_white.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
@@ -75,6 +76,25 @@
     flex-wrap:wrap;
     gap:18px;
     margin-bottom:32px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .brand-logo{
+    height:42px;
+    width:auto;
+    display:block;
+    flex-shrink:0;
+  }
+  .brand-logo-dark{display:none;}
+  html[data-theme="dark"] .brand-logo-dark{display:block;}
+  html[data-theme="dark"] .brand-logo-light{display:none;}
+  @media (max-width:520px){
+    .brand{gap:12px;}
+    .brand-logo{height:34px;}
   }
 
   .board-title-block h1{
@@ -306,7 +326,7 @@
     text-align:center;
     border:1.5px dashed var(--border-strong);
     border-radius:12px;
-    background:rgba(255,255,255,0.4);
+    background:var(--not-started-soft);
   }
 
   /* ---- Card ---- */
@@ -407,9 +427,11 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
+    flex-wrap:wrap;
     gap:8px;
     margin-top:10px;
   }
+  .card-meta-row .card-dates{margin-left:auto;}
 
   .card-due{
     display:flex;
@@ -721,6 +743,373 @@
     margin-top:16px;
   }
 
+  /* ---- Tags ---- */
+  .card-tags{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:5px;
+    margin-top:9px;
+  }
+  .tag-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    background:var(--not-started-soft);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:2px 5px 2px 8px;
+    font-size:11px;
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.5;
+    max-width:100%;
+  }
+  .tag-chip .tag-text{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .tag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .tag-remove{
+    background:none;border:none;cursor:pointer;
+    color:var(--muted-2);font-size:13px;line-height:1;
+    padding:0 1px;border-radius:4px;flex-shrink:0;
+  }
+  .tag-remove:hover{color:#dc2626;}
+  .tag-add{
+    font-family:'Inter',sans-serif;
+    font-size:11px;font-weight:600;
+    color:var(--muted);
+    background:transparent;
+    border:1px dashed var(--border-strong);
+    border-radius:20px;
+    padding:2px 9px;
+    cursor:pointer;
+    transition:color .12s ease, border-color .12s ease;
+  }
+  .tag-add:hover{color:var(--accent);border-color:var(--accent);}
+  .tag-input{
+    font-family:'Inter',sans-serif;
+    font-size:11px;font-weight:500;
+    border:1px solid var(--accent);
+    border-radius:20px;
+    padding:2px 9px;
+    outline:none;
+    width:110px;
+    background:var(--surface);
+    color:var(--ink);
+  }
+
+  /* ---- Drag reorder ---- */
+  .card.dragging{opacity:.4;}
+  .drop-line{
+    height:2px;
+    background:var(--accent);
+    border-radius:2px;
+    margin:5px 2px;
+    box-shadow:0 0 0 2px var(--accent-soft);
+  }
+
+  /* ---- Card start / due dates ---- */
+  .card-dates{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    flex-wrap:wrap;
+  }
+  .date-field{
+    display:flex;
+    align-items:center;
+    gap:3px;
+    font-size:11px;
+    color:var(--muted-2);
+  }
+  .date-field .date-lbl{
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    font-size:9.5px;
+  }
+  .date-field input[type="date"]{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:500;
+    color:var(--muted);
+    background:transparent;
+    border:none;
+    padding:2px 2px;
+    border-radius:4px;
+    max-width:104px;
+  }
+  .date-field input[type="date"]:hover, .date-field input[type="date"]:focus{
+    background:var(--not-started-soft);
+    color:var(--ink);
+    outline:none;
+  }
+  .card-date-error{
+    margin-top:7px;
+    font-size:11px;
+    font-weight:600;
+    color:#dc2626;
+    line-height:1.4;
+  }
+  .card-date-error::before{content:"\26A0\FE0F  ";}
+
+  /* ---- Gantt view ---- */
+  .gantt-wrap{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px;
+    box-shadow:var(--shadow-sm);
+  }
+  .gantt-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+    padding:0 2px;
+  }
+  .gantt-range{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:-0.01em;
+  }
+  .gantt-head-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .gantt-zoom{display:flex;align-items:center;gap:4px;}
+  .gantt-zoom button{
+    width:26px;height:26px;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--muted);
+    border-radius:7px;
+    cursor:pointer;
+    font-size:15px;font-weight:600;line-height:1;
+  }
+  .gantt-zoom button:hover{background:var(--not-started-soft);color:var(--ink);}
+  .gantt-zoom button:disabled{opacity:.4;cursor:default;}
+  .gantt-zoom button:disabled:hover{background:var(--surface);color:var(--muted);}
+  .gantt-legend{display:flex;gap:14px;flex-wrap:wrap;}
+  .gantt-legend span{
+    display:flex;align-items:center;gap:5px;
+    font-size:11.5px;font-weight:600;color:var(--muted);
+  }
+  .gantt-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .lg-not-started{background:var(--not-started);}
+  .lg-in-progress{background:var(--in-progress);}
+  .lg-completed{background:var(--completed);}
+
+  .gantt-chart{
+    display:flex;
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  .gantt-labels{
+    flex-shrink:0;
+    width:186px;
+    border-right:1px solid var(--border);
+    background:var(--surface);
+  }
+  .g-label-head{
+    height:47px;
+    border-bottom:1px solid var(--border);
+  }
+  .g-label{
+    height:37px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:0 12px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    white-space:nowrap;
+    overflow:hidden;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+  }
+  .g-label-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .g-label:last-child{border-bottom:none;}
+  .g-label:hover{background:var(--not-started-soft);color:var(--accent);}
+  .g-label.g-label-completed .g-label-text{text-decoration:line-through;color:var(--muted);}
+  .g-label.g-overlay .g-label-text{color:var(--muted);}
+  .g-board-badge{
+    flex-shrink:0;
+    max-width:78px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:9px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    color:#fff;
+    padding:1px 5px;
+    border-radius:5px;
+  }
+
+  .gantt-timeline{
+    flex:1;
+    min-width:0;
+    overflow-x:auto;
+  }
+  .g-axis{
+    height:47px;
+    border-bottom:1px solid var(--border);
+  }
+  .g-months{display:flex;height:23px;}
+  .g-month{
+    flex-shrink:0;
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--muted-2);
+    padding:5px 6px 0;
+    border-right:1px solid var(--border);
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  .g-days{display:flex;height:24px;}
+  .g-day{
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    font-weight:600;
+    color:var(--muted);
+    border-right:1px solid var(--border);
+  }
+  .g-day.g-weekend{background:var(--not-started-soft);color:var(--muted-2);}
+  .g-day.g-today{background:var(--accent);color:#fff;}
+
+  /* Month-only axis (zoomed too far out for day numbers) */
+  .g-axis.g-axis-months .g-months{height:46px;align-items:center;}
+  .g-axis.g-axis-months .g-month{
+    display:flex;
+    align-items:center;
+    padding:0 8px;
+    font-size:11px;
+  }
+
+  .g-rows{position:relative;}
+  .g-row{
+    height:37px;
+    border-bottom:1px solid var(--border);
+    position:relative;
+  }
+  .g-row:last-child{border-bottom:none;}
+  .g-row-weekend{position:absolute;top:0;bottom:0;background:var(--not-started-soft);opacity:.5;pointer-events:none;}
+  .g-today-line{
+    position:absolute;top:0;bottom:0;width:2px;
+    background:var(--accent);
+    opacity:.55;
+    pointer-events:none;
+  }
+  .g-bar{
+    position:absolute;
+    top:8px;
+    height:21px;
+    border:none;
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    padding:0 8px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+    font-size:10.5px;
+    font-weight:600;
+    color:#fff;
+    overflow:hidden;
+    box-shadow:var(--shadow-sm);
+  }
+  .g-bar .g-bar-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .g-bar.s-not-started{background:var(--not-started);}
+  .g-bar.s-in-progress{background:var(--in-progress);}
+  .g-bar.s-completed{background:var(--completed);}
+  .g-bar:hover{filter:brightness(1.06);}
+  .g-milestone{
+    position:absolute;
+    top:9px;
+    width:18px;height:18px;
+    margin-left:-9px;
+    transform:rotate(45deg);
+    border:none;
+    border-radius:3px;
+    cursor:pointer;
+    box-shadow:var(--shadow-sm);
+  }
+  .g-milestone.s-not-started{background:var(--not-started);}
+  .g-milestone.s-in-progress{background:var(--in-progress);}
+  .g-milestone.s-completed{background:var(--completed);}
+  .g-milestone:hover{filter:brightness(1.06);}
+  .g-bar.g-overdue{outline:2px solid #dc2626;outline-offset:1px;}
+  .g-milestone.g-overdue{outline:2px solid #dc2626;}
+
+  /* Overlaid tasks from other boards: dimmed + diagonal hatch */
+  .g-bar.g-overlay, .g-milestone.g-overlay{
+    opacity:.72;
+    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.32) 0 4px, rgba(255,255,255,0) 4px 8px);
+  }
+  .g-bar.g-overlay{box-shadow:none;}
+
+  .gantt-overlay-controls{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:12px;
+    padding:0 2px;
+  }
+  .gantt-overlay-label{
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--muted);
+    margin-right:2px;
+  }
+  .overlay-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--muted);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:3px 10px;
+    cursor:pointer;
+    transition:color .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .overlay-chip:hover{color:var(--ink);border-color:var(--border-strong);}
+  .overlay-chip.on{
+    color:var(--ink);
+    border-color:var(--accent);
+    background:var(--accent-soft);
+  }
+  .overlay-swatch{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  .gantt-empty{
+    text-align:center;
+    color:var(--muted-2);
+    font-size:13px;
+    padding:34px 14px;
+  }
+  .gantt-hint{
+    text-align:center;
+    color:var(--muted-2);
+    font-size:12px;
+    margin-top:14px;
+  }
+
   @keyframes flashHighlight{
     0%{box-shadow:0 0 0 3px var(--accent);}
     100%{box-shadow:var(--shadow-sm);}
@@ -739,9 +1128,13 @@
 
 <div class="wrap">
   <header class="board-head">
-    <div class="board-title-block">
-      <h1>Minutemen Racing Tasks</h1>
-      <p class="sub">Create a task, claim it when you start, check it off when it's done.</p>
+    <div class="brand">
+      <img class="brand-logo brand-logo-light" src="assets/mr_logo_black.png" alt="Minutemen Racing logo">
+      <img class="brand-logo brand-logo-dark" src="assets/mr_logo_white.png" alt="Minutemen Racing logo">
+      <div class="board-title-block">
+        <h1>Minutemen Racing Tasks</h1>
+        <p class="sub">Create a task, claim it when you start, check it off when it's done.</p>
+      </div>
     </div>
     <div class="header-actions">
       <div class="view-switch" id="viewSwitch">
@@ -752,6 +1145,10 @@
         <button data-view="calendar">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.2" width="12" height="10.8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 5.4H13" stroke="currentColor" stroke-width="1.3"/><path d="M4 1V3.4M10 1V3.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
           Calendar
+        </button>
+        <button data-view="gantt">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1.6" width="7.5" height="2.6" rx="1" fill="currentColor"/><rect x="3.8" y="5.7" width="9.2" height="2.6" rx="1" fill="currentColor"/><rect x="2" y="9.8" width="5.6" height="2.6" rx="1" fill="currentColor"/></svg>
+          Gantt
         </button>
       </div>
       <button class="new-ticket-btn" id="newTicketBtn">
@@ -817,6 +1214,28 @@
     </div>
     <p class="calendar-hint">Showing tasks with a due date on this board. Click a task to jump to its card.</p>
   </section>
+
+  <section id="ganttViewSection" style="display:none;">
+    <div class="gantt-wrap">
+      <div class="gantt-head">
+        <div class="gantt-head-left">
+          <span class="gantt-range" id="ganttLabel"></span>
+          <div class="gantt-zoom">
+            <button type="button" id="ganttZoomOut" title="Zoom out" aria-label="Zoom out">&minus;</button>
+            <button type="button" id="ganttZoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+          </div>
+        </div>
+        <div class="gantt-legend">
+          <span><i class="lg-not-started"></i>Not started</span>
+          <span><i class="lg-in-progress"></i>In progress</span>
+          <span><i class="lg-completed"></i>Completed</span>
+        </div>
+      </div>
+      <div class="gantt-overlay-controls" id="ganttOverlayControls" style="display:none;"></div>
+      <div id="ganttBody"></div>
+    </div>
+    <p class="gantt-hint">Tasks are ordered by closest due date. Add a start date on a card to give its bar a length; tasks with only a due date show as a diamond. Toggle another board to overlay its tasks (shown hatched). Click a task to jump to its card.</p>
+  </section>
 </div>
 
 <div class="modal-overlay" id="claimOverlay">
@@ -866,22 +1285,32 @@
   let pendingRenameId = null;
   let viewMode = "board";
   let calendarDate = new Date(); calendarDate.setDate(1);
-  let theme = "light";
+  let theme = "dark";
+
+  const GANTT_ZOOM_MIN = 0.35, GANTT_ZOOM_MAX = 4, GANTT_ZOOM_STEP = 1.3;
+  let ganttZoom = 1;
+  const ganttOverlayBoardIds = new Set();
 
   const SUN_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3.2" stroke="currentColor" stroke-width="1.4"/><path d="M8 1V2.4M8 13.6V15M15 8H13.6M2.4 8H1M12.7 3.3L11.7 4.3M4.3 11.7L3.3 12.7M12.7 12.7L11.7 11.7M4.3 4.3L3.3 3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
   const MOON_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.8A6 6 0 1 1 6.2 2.5a5 5 0 0 0 7.3 7.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 
+  const FAVICON_LIGHT = 'assets/mr_logo_black.png';
+  const FAVICON_DARK = 'assets/mr_logo_white.png';
+
   function applyTheme(){
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('themeToggle');
+    const favicon = document.getElementById('favicon');
     if(theme === 'dark'){
       btn.innerHTML = SUN_ICON;
       btn.title = 'Switch to light theme';
       btn.setAttribute('aria-label', 'Switch to light theme');
+      if(favicon) favicon.href = FAVICON_DARK;
     } else {
       btn.innerHTML = MOON_ICON;
       btn.title = 'Switch to dark theme';
       btn.setAttribute('aria-label', 'Switch to dark theme');
+      if(favicon) favicon.href = FAVICON_LIGHT;
     }
   }
 
@@ -953,20 +1382,43 @@
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
   }
 
-  function moveCard(id, newStatus){
+  function reorderTask(board, id, beforeId){
+    if(!board) return;
+    const fromIdx = board.tasks.findIndex(t => t.id === id);
+    if(fromIdx === -1) return;
+    const [moved] = board.tasks.splice(fromIdx, 1);
+    let toIdx = -1;
+    if(beforeId != null){
+      toIdx = board.tasks.findIndex(t => t.id === beforeId);
+    }
+    if(toIdx === -1) board.tasks.push(moved);
+    else board.tasks.splice(toIdx, 0, moved);
+  }
+
+  // beforeId semantics: a task id to drop in front of, null to drop at the end
+  // of the target column, or undefined to leave the card's list position alone
+  // (used by the status buttons, which only change status).
+  function moveCard(id, newStatus, beforeId){
+    const board = getActiveBoard();
     const task = getTask(id);
-    if(!task || task.status === newStatus) return;
+    if(!task) return;
+
+    if(beforeId === id){
+      if(task.status === newStatus) return;
+      beforeId = null;
+    }
 
     if(newStatus === "in-progress" && task.status === "not-started"){
-      pendingMove = {id, newStatus};
+      pendingMove = {id, newStatus, beforeId};
       openClaimModal();
       return;
     }
 
-    if(newStatus === "not-started"){
+    if(newStatus === "not-started" && task.status !== "not-started"){
       task.assignee = "";
     }
     task.status = newStatus;
+    if(beforeId !== undefined) reorderTask(board, id, beforeId);
     render();
     saveData();
   }
@@ -1002,6 +1454,7 @@
     if(task){
       task.assignee = name;
       task.status = pendingMove.newStatus;
+      if(pendingMove.beforeId !== undefined) reorderTask(getActiveBoard(), pendingMove.id, pendingMove.beforeId);
     }
     document.getElementById('claimOverlay').classList.remove('open');
     pendingMove = null;
@@ -1012,7 +1465,7 @@
   function addTask(){
     const board = getActiveBoard();
     if(!board) return;
-    const task = {id: cryptoId(), title:"", description:"", due:"", status:"not-started", assignee:""};
+    const task = {id: cryptoId(), title:"", description:"", start:"", due:"", status:"not-started", assignee:"", tags:[]};
     board.tasks.unshift(task);
     render();
     const el = document.querySelector('[data-id="'+task.id+'"] .card-title');
@@ -1052,6 +1505,27 @@
     calendarDate.setDate(1);
     renderCalendar();
   });
+
+  /* ---- Gantt zoom ---- */
+  function zoomGantt(factor){
+    const timeline = document.querySelector('#ganttBody .gantt-timeline');
+    const track = timeline ? timeline.querySelector('.g-rows') : null;
+    // Keep whatever date is under the middle of the viewport roughly in place.
+    let anchorRatio = 0;
+    if(timeline && track && track.offsetWidth > 0){
+      anchorRatio = (timeline.scrollLeft + timeline.clientWidth / 2) / track.offsetWidth;
+    }
+    const next = ganttZoom * factor;
+    ganttZoom = Math.max(GANTT_ZOOM_MIN, Math.min(GANTT_ZOOM_MAX, next));
+    renderGantt();
+    const newTimeline = document.querySelector('#ganttBody .gantt-timeline');
+    const newTrack = newTimeline ? newTimeline.querySelector('.g-rows') : null;
+    if(newTimeline && newTrack && anchorRatio){
+      newTimeline.scrollLeft = anchorRatio * newTrack.offsetWidth - newTimeline.clientWidth / 2;
+    }
+  }
+  document.getElementById('ganttZoomIn').addEventListener('click', function(){ zoomGantt(GANTT_ZOOM_STEP); });
+  document.getElementById('ganttZoomOut').addEventListener('click', function(){ zoomGantt(1 / GANTT_ZOOM_STEP); });
 
   function pad2(n){ return n < 10 ? '0' + n : '' + n; }
   function fmtDateKey(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
@@ -1132,6 +1606,213 @@
     });
   }
 
+  /* ---- Gantt view ---- */
+  function parseDateKey(s){
+    const parts = s.split('-');
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+  const DAY_MS = 86400000;
+  function dayDiff(a, b){ return Math.round((b - a) / DAY_MS); }
+
+  function updateGanttZoomButtons(hasTasks){
+    const outBtn = document.getElementById('ganttZoomOut');
+    const inBtn = document.getElementById('ganttZoomIn');
+    if(!outBtn || !inBtn) return;
+    outBtn.disabled = !hasTasks || ganttZoom <= GANTT_ZOOM_MIN + 0.001;
+    inBtn.disabled = !hasTasks || ganttZoom >= GANTT_ZOOM_MAX - 0.001;
+  }
+
+  function boardColor(id){
+    const idx = boards.findIndex(b => b.id === id);
+    return AVATAR_COLORS[(idx < 0 ? 0 : idx) % AVATAR_COLORS.length];
+  }
+
+  function renderGanttOverlayControls(){
+    const el = document.getElementById('ganttOverlayControls');
+    if(!el) return;
+    const others = boards.filter(b => b.id !== activeBoardId);
+    if(others.length === 0){
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    el.style.display = '';
+    el.innerHTML = '<span class="gantt-overlay-label">Overlay boards</span>' +
+      others.map(b => {
+        const on = ganttOverlayBoardIds.has(b.id);
+        return '<button type="button" class="overlay-chip'+(on?' on':'')+'" data-board-id="'+b.id+'" aria-pressed="'+on+'">'+
+          '<span class="overlay-swatch" style="background:'+boardColor(b.id)+'"></span>'+
+          escapeHtml(b.name)+
+        '</button>';
+      }).join('');
+    el.querySelectorAll('.overlay-chip').forEach(chip => {
+      chip.addEventListener('click', function(){
+        const id = chip.getAttribute('data-board-id');
+        if(ganttOverlayBoardIds.has(id)) ganttOverlayBoardIds.delete(id);
+        else ganttOverlayBoardIds.add(id);
+        renderGantt();
+      });
+    });
+  }
+
+  function renderGantt(){
+    const labelEl = document.getElementById('ganttLabel');
+    const bodyEl = document.getElementById('ganttBody');
+
+    renderGanttOverlayControls();
+
+    // Gather tasks from the active board plus any overlaid boards.
+    const entries = [];
+    const board = getActiveBoard();
+    if(board){
+      board.tasks.forEach(t => entries.push({t: t, boardId: board.id, boardName: board.name, primary: true}));
+    }
+    let overlaysActive = false;
+    ganttOverlayBoardIds.forEach(bid => {
+      if(bid === activeBoardId) return;
+      const ob = boards.find(b => b.id === bid);
+      if(!ob) return;
+      overlaysActive = true;
+      ob.tasks.forEach(t => entries.push({t: t, boardId: ob.id, boardName: ob.name, primary: false}));
+    });
+
+    // Only tasks with a due date, ordered by the closest due date first.
+    const rows = entries.filter(e => e.t.due).sort((a, b) => {
+      if(a.t.due !== b.t.due) return a.t.due < b.t.due ? -1 : 1;
+      const as = a.t.start || a.t.due, bs = b.t.start || b.t.due;
+      if(as !== bs) return as < bs ? -1 : 1;
+      return (a.t.title || '').localeCompare(b.t.title || '');
+    });
+
+    if(rows.length === 0){
+      labelEl.textContent = '';
+      bodyEl.innerHTML = '<p class="gantt-empty">No tasks with a due date' +
+        (overlaysActive ? ' on these boards' : ' on this board') +
+        ' yet. Add a due date to a card to see it here.</p>';
+      updateGanttZoomButtons(false);
+      return;
+    }
+    updateGanttZoomButtons(true);
+
+    let minTime = Infinity, maxTime = -Infinity;
+    rows.forEach(e => {
+      const due = parseDateKey(e.t.due);
+      const start = e.t.start ? parseDateKey(e.t.start) : due;
+      minTime = Math.min(minTime, start.getTime(), due.getTime());
+      maxTime = Math.max(maxTime, start.getTime(), due.getTime());
+    });
+
+    const rangeStart = new Date(minTime - DAY_MS);
+    const rangeEnd = new Date(maxTime + DAY_MS);
+    const totalDays = dayDiff(rangeStart, rangeEnd) + 1;
+    const baseDayW = totalDays > 90 ? 16 : totalDays > 45 ? 22 : totalDays > 21 ? 30 : 40;
+    const DAY_W = Math.max(6, Math.min(160, Math.round(baseDayW * ganttZoom)));
+    const chartWidth = totalDays * DAY_W;
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const todayOffset = dayDiff(rangeStart, today);
+
+    const fmt = d => d.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+    labelEl.textContent = fmt(rangeStart) + ' – ' + fmt(rangeEnd);
+
+    // Below this column width the day numbers can't be read, so the axis
+    // collapses to month labels only.
+    const dayMode = DAY_W >= 18;
+
+    // Axis: month band + (in day mode) day band
+    let dayCells = '', monthCells = '';
+    let monthName = '', monthSpan = 0;
+    for(let i = 0; i < totalDays; i++){
+      const d = new Date(rangeStart.getTime() + i * DAY_MS);
+      const weekend = d.getDay() === 0 || d.getDay() === 6;
+      const isToday = i === todayOffset;
+      if(dayMode){
+        dayCells += '<div class="g-day'+(weekend?' g-weekend':'')+(isToday?' g-today':'')+'" style="width:'+DAY_W+'px">'+d.getDate()+'</div>';
+      }
+      const mn = d.toLocaleDateString(undefined, {month:'short', year:'numeric'});
+      if(mn !== monthName){
+        if(monthSpan) monthCells += '<div class="g-month" style="width:'+(monthSpan*DAY_W)+'px">'+monthName+'</div>';
+        monthName = mn; monthSpan = 1;
+      } else {
+        monthSpan++;
+      }
+    }
+    if(monthSpan) monthCells += '<div class="g-month" style="width:'+(monthSpan*DAY_W)+'px">'+monthName+'</div>';
+
+    // Weekend shading behind the rows (day mode only — too noisy when zoomed out)
+    let weekendBands = '';
+    if(dayMode){
+      for(let i = 0; i < totalDays; i++){
+        const d = new Date(rangeStart.getTime() + i * DAY_MS);
+        if(d.getDay() === 0 || d.getDay() === 6){
+          weekendBands += '<div class="g-row-weekend" style="left:'+(i*DAY_W)+'px;width:'+DAY_W+'px"></div>';
+        }
+      }
+    }
+    const todayLine = (todayOffset >= 0 && todayOffset < totalDays)
+      ? '<div class="g-today-line" style="left:'+(todayOffset*DAY_W + DAY_W/2)+'px"></div>'
+      : '';
+
+    let labelsHtml = '<div class="g-label-head"></div>';
+    let rowsHtml = '';
+    rows.forEach(e => {
+      const t = e.t;
+      const title = t.title ? escapeHtml(t.title) : 'Untitled task';
+      const titleAttr = title.replace(/"/g, '&quot;');
+      const boardNm = escapeHtml(e.boardName).replace(/"/g, '&quot;');
+      const due = parseDateKey(t.due);
+      const hasStart = !!t.start;
+      const startRaw = hasStart ? parseDateKey(t.start) : due;
+      const barStart = Math.min(startRaw.getTime(), due.getTime());
+      const offsetDays = dayDiff(rangeStart, new Date(barStart));
+      const spanDays = Math.max(1, dayDiff(new Date(barStart), due) + 1);
+      const overdue = due < today && t.status !== 'completed';
+      const ds = 'data-task-id="'+t.id+'" data-board-id="'+e.boardId+'"';
+      const overlayCls = e.primary ? '' : ' g-overlay';
+      const badge = overlaysActive
+        ? '<span class="g-board-badge" style="background:'+boardColor(e.boardId)+'" title="'+boardNm+'">'+escapeHtml(e.boardName)+'</span>'
+        : '';
+      const fullTitle = (overlaysActive ? e.boardName + ' · ' : '') + (t.title || 'Untitled task');
+      const fullTitleAttr = escapeHtml(fullTitle).replace(/"/g, '&quot;');
+
+      labelsHtml += '<div class="g-label'+(t.status==='completed'?' g-label-completed':'')+overlayCls+'" '+ds+' title="'+fullTitleAttr+'">'+badge+'<span class="g-label-text">'+title+'</span></div>';
+
+      let markHtml;
+      if(hasStart){
+        const left = offsetDays * DAY_W + 2;
+        const width = Math.max(6, spanDays * DAY_W - 4);
+        markHtml = '<button type="button" class="g-bar s-'+t.status+(overdue?' g-overdue':'')+overlayCls+'" '+ds+' style="left:'+left+'px;width:'+width+'px" title="'+fullTitleAttr+'"><span class="g-bar-label">'+title+'</span></button>';
+      } else {
+        const left = offsetDays * DAY_W + DAY_W/2;
+        markHtml = '<button type="button" class="g-milestone s-'+t.status+(overdue?' g-overdue':'')+overlayCls+'" '+ds+' style="left:'+left+'px" title="'+fullTitleAttr+' — due '+t.due+' (no start date)"></button>';
+      }
+      rowsHtml += '<div class="g-row">'+markHtml+'</div>';
+    });
+
+    bodyEl.innerHTML =
+      '<div class="gantt-chart">'+
+        '<div class="gantt-labels">'+labelsHtml+'</div>'+
+        '<div class="gantt-timeline">'+
+          '<div class="g-axis'+(dayMode?'':' g-axis-months')+'" style="width:'+chartWidth+'px">'+
+            '<div class="g-months">'+monthCells+'</div>'+
+            (dayMode ? '<div class="g-days">'+dayCells+'</div>' : '')+
+          '</div>'+
+          '<div class="g-rows" style="width:'+chartWidth+'px">'+weekendBands+todayLine+rowsHtml+'</div>'+
+        '</div>'+
+      '</div>';
+
+    bodyEl.querySelectorAll('[data-task-id]').forEach(el => {
+      el.addEventListener('click', function(){
+        const bid = el.getAttribute('data-board-id');
+        if(bid && bid !== activeBoardId){
+          activeBoardId = bid;
+          ganttOverlayBoardIds.delete(bid);
+        }
+        jumpToCard(el.getAttribute('data-task-id'));
+      });
+    });
+  }
+
   /* ---- Boards / tabs ---- */
   function switchBoard(id){
     if(id === activeBoardId) return;
@@ -1192,6 +1873,7 @@
     if(!pendingDeleteId) return closeDeleteBoardModal();
     const id = pendingDeleteId;
     boards = boards.filter(b => b.id !== id);
+    ganttOverlayBoardIds.delete(id);
     if(activeBoardId === id){
       activeBoardId = boards[0].id;
     }
@@ -1276,6 +1958,12 @@
     });
   }
 
+  function tagColor(tag){
+    let hash = 0;
+    for(let i=0;i<tag.length;i++){ hash = tag.charCodeAt(i) + ((hash << 5) - hash); }
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  }
+
   function cardHtml(task){
     let chipHtml = "";
     if(task.assignee){
@@ -1284,6 +1972,16 @@
     } else {
       chipHtml = '<span></span>';
     }
+
+    const tags = Array.isArray(task.tags) ? task.tags : [];
+    const tagsHtml = tags.map(tg => {
+      const safe = escapeHtml(tg);
+      return '<span class="tag-chip">'+
+        '<span class="tag-dot" style="background:'+tagColor(tg)+'"></span>'+
+        '<span class="tag-text">'+safe+'</span>'+
+        '<button class="tag-remove" data-action="tag-remove" data-tag="'+safe.replace(/"/g,'&quot;')+'" title="Remove tag">&times;</button>'+
+      '</span>';
+    }).join('');
 
     const switches = STATUSES.map(s => {
       const active = s === task.status;
@@ -1298,13 +1996,15 @@
           '<button class="delete-btn" data-action="delete" title="Delete task">&times;</button>'+
         '</div>'+
         '<div class="card-desc" contenteditable="true" data-placeholder="Add a description..." data-field="description">'+escapeHtml(task.description)+'</div>'+
+        '<div class="card-tags">'+tagsHtml+'<button class="tag-add" type="button" data-action="tag-add">+ Tag</button></div>'+
         '<div class="card-meta-row">'+
           chipHtml+
-          '<div class="card-due">'+
-            '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M1.5 5.5H12.5" stroke="currentColor" stroke-width="1.1"/><path d="M4 1.2V3.4M10 1.2V3.4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>'+
-            '<input type="date" data-field="due" value="'+task.due+'">'+
+          '<div class="card-dates">'+
+            '<span class="date-field"><span class="date-lbl">Start</span><input type="date" data-field="start" value="'+(task.start||"")+'"'+(task.due?' max="'+task.due+'"':'')+' aria-label="Start date"></span>'+
+            '<span class="date-field"><span class="date-lbl">Due</span><input type="date" data-field="due" value="'+(task.due||"")+'"'+(task.start?' min="'+task.start+'"':'')+' aria-label="Due date"></span>'+
           '</div>'+
         '</div>'+
+        '<div class="card-date-error" data-role="date-error" hidden></div>'+
         '<div class="status-switch">'+switches+'</div>'+
       '</div>'
     );
@@ -1321,19 +2021,23 @@
 
     const boardSection = document.getElementById('boardViewSection');
     const calendarSection = document.getElementById('calendarViewSection');
+    const ganttSection = document.getElementById('ganttViewSection');
 
-    if(viewMode === "calendar"){
-      boardSection.style.display = "none";
-      calendarSection.style.display = "";
-      renderCalendar();
-      return;
-    }
-
-    boardSection.style.display = "";
-    calendarSection.style.display = "none";
+    boardSection.style.display = viewMode === "board" ? "" : "none";
+    calendarSection.style.display = viewMode === "calendar" ? "" : "none";
+    ganttSection.style.display = viewMode === "gantt" ? "" : "none";
     document.querySelectorAll('#viewSwitch button').forEach(b => {
       b.classList.toggle('active', b.getAttribute('data-view') === viewMode);
     });
+
+    if(viewMode === "calendar"){
+      renderCalendar();
+      return;
+    }
+    if(viewMode === "gantt"){
+      renderGantt();
+      return;
+    }
 
     const board = getActiveBoard();
     const tasks = board ? board.tasks : [];
@@ -1357,11 +2061,17 @@
 
       card.addEventListener('dragstart', function(e){
         e.dataTransfer.setData('text/plain', id);
-        card.style.opacity = '0.4';
+        e.dataTransfer.effectAllowed = 'move';
+        card.classList.add('dragging');
       });
       card.addEventListener('dragend', function(){
-        card.style.opacity = '1';
+        card.classList.remove('dragging');
+        clearDropLine();
       });
+
+      // Let inputs / editable fields work reliably inside the draggable card.
+      card.addEventListener('focusin', function(){ card.setAttribute('draggable', 'false'); });
+      card.addEventListener('focusout', function(){ card.setAttribute('draggable', 'true'); });
 
       card.querySelectorAll('[contenteditable]').forEach(el => {
         el.addEventListener('blur', function(){
@@ -1379,13 +2089,49 @@
         });
       });
 
-      const dueInput = card.querySelector('input[type="date"]');
-      dueInput.addEventListener('change', function(){
-        const task = getTask(id);
-        if(task) {
-          task.due = dueInput.value;
+      const startInput = card.querySelector('input[data-field="start"]');
+      const dueInput = card.querySelector('input[data-field="due"]');
+      const dateErrorEl = card.querySelector('[data-role="date-error"]');
+
+      function showDateError(msg){
+        if(!dateErrorEl) return;
+        dateErrorEl.textContent = msg;
+        dateErrorEl.hidden = false;
+      }
+      function clearDateError(){
+        if(!dateErrorEl) return;
+        dateErrorEl.hidden = true;
+        dateErrorEl.textContent = '';
+      }
+      function syncDateBounds(task){
+        if(startInput) startInput.max = task.due || '';
+        if(dueInput) dueInput.min = task.start || '';
+      }
+
+      [startInput, dueInput].forEach(dateInput => {
+        if(!dateInput) return;
+        dateInput.addEventListener('change', function(){
+          const task = getTask(id);
+          if(!task) return;
+          const field = dateInput.getAttribute('data-field');
+          const prev = task[field] || '';
+          const newVal = dateInput.value;
+          const start = field === 'start' ? newVal : (task.start || '');
+          const due = field === 'due' ? newVal : (task.due || '');
+
+          if(start && due && start > due){
+            dateInput.value = prev;
+            showDateError(field === 'start'
+              ? 'Start date can’t be after the due date.'
+              : 'Due date can’t be before the start date.');
+            return;
+          }
+
+          task[field] = newVal;
+          clearDateError();
+          syncDateBounds(task);
           saveData();
-        }
+        });
       });
 
       card.querySelector('[data-action="delete"]').addEventListener('click', function(){
@@ -1397,23 +2143,109 @@
           moveCard(id, btn.getAttribute('data-status'));
         });
       });
+
+      card.querySelectorAll('[data-action="tag-remove"]').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const task = getTask(id);
+          if(!task || !Array.isArray(task.tags)) return;
+          const tag = btn.getAttribute('data-tag');
+          task.tags = task.tags.filter(t => t !== tag);
+          render();
+          saveData();
+        });
+      });
+
+      const tagAddBtn = card.querySelector('[data-action="tag-add"]');
+      if(tagAddBtn){
+        tagAddBtn.addEventListener('click', function(){
+          const wrap = card.querySelector('.card-tags');
+          if(wrap.querySelector('.tag-input')) return;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'tag-input';
+          input.placeholder = 'Tag name';
+          input.maxLength = 24;
+          input.setAttribute('draggable', 'false');
+          wrap.insertBefore(input, tagAddBtn);
+          input.focus();
+          let done = false;
+          function commit(save){
+            if(done) return;
+            done = true;
+            const val = input.value.trim().replace(/\s+/g, ' ');
+            input.remove();
+            if(!save || !val) return;
+            const task = getTask(id);
+            if(!task) return;
+            if(!Array.isArray(task.tags)) task.tags = [];
+            if(task.tags.some(t => t.toLowerCase() === val.toLowerCase())) return;
+            task.tags.push(val);
+            render();
+            saveData();
+          }
+          input.addEventListener('keydown', function(e){
+            if(e.key === 'Enter'){ e.preventDefault(); commit(true); }
+            else if(e.key === 'Escape'){ e.preventDefault(); commit(false); }
+          });
+          input.addEventListener('blur', function(){ commit(true); });
+        });
+      }
     });
+  }
+
+  let dropLine = null;
+  function ensureDropLine(){
+    if(!dropLine){
+      dropLine = document.createElement('div');
+      dropLine.className = 'drop-line';
+    }
+    return dropLine;
+  }
+  function clearDropLine(){
+    if(dropLine && dropLine.parentNode) dropLine.parentNode.removeChild(dropLine);
+  }
+  function getDragAfterElement(listEl, y){
+    const cards = [].slice.call(listEl.querySelectorAll('.card:not(.dragging)'));
+    let closest = {offset: -Infinity, element: null};
+    cards.forEach(child => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if(offset < 0 && offset > closest.offset){
+        closest = {offset, element: child};
+      }
+    });
+    return closest.element;
   }
 
   document.querySelectorAll('.column').forEach(col => {
     const status = col.getAttribute('data-status');
+    const listEl = col.querySelector('.card-list');
     col.addEventListener('dragover', function(e){
       e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
       col.classList.add('drag-over');
+      const after = getDragAfterElement(listEl, e.clientY);
+      const line = ensureDropLine();
+      if(after == null) listEl.appendChild(line);
+      else listEl.insertBefore(line, after);
     });
-    col.addEventListener('dragleave', function(){
+    col.addEventListener('dragleave', function(e){
+      if(e.relatedTarget && col.contains(e.relatedTarget)) return;
       col.classList.remove('drag-over');
+      clearDropLine();
     });
     col.addEventListener('drop', function(e){
       e.preventDefault();
       col.classList.remove('drag-over');
       const id = e.dataTransfer.getData('text/plain');
-      moveCard(id, status);
+      let beforeId = null;
+      if(dropLine && dropLine.parentNode === listEl){
+        let next = dropLine.nextElementSibling;
+        while(next && !next.classList.contains('card')) next = next.nextElementSibling;
+        if(next) beforeId = next.getAttribute('data-id');
+      }
+      clearDropLine();
+      moveCard(id, status, beforeId);
     });
   });
 
