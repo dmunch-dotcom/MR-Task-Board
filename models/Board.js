@@ -5,6 +5,14 @@ const mongoose = require('mongoose');
 // { id, title, description, start, due, status, assignee, tags }
 // The order of tasks within this array is the card order the client set
 // (including drag-to-reorder within a column), so it is persisted as sent.
+//
+// `strict: false` is deliberate: the front-end owns the task shape and POSTs
+// the whole board array as the source of truth. Without it, Mongoose casting
+// silently drops any key not listed below (this is what happened to `start`
+// and `tags` when they were added client-side before this schema caught up).
+// Keeping it loose means new card fields persist without a schema change or a
+// server restart. The fields below still document the expected shape and
+// supply defaults/validation for the known ones.
 const TaskSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
@@ -20,7 +28,11 @@ const TaskSchema = new mongoose.Schema(
     assignee: { type: String, default: '' },
     tags: { type: [String], default: [] }
   },
-  { _id: false } // client already generates its own 'id', no need for a separate Mongo _id per task
+  {
+    _id: false, // client already generates its own 'id', no need for a separate Mongo _id per task
+    strict: false,
+    minimize: false
+  }
 );
 
 const BoardSchema = new mongoose.Schema(
