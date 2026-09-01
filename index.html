@@ -896,6 +896,51 @@
   .gantt-zoom button:hover{background:var(--not-started-soft);color:var(--ink);}
   .gantt-zoom button:disabled{opacity:.4;cursor:default;}
   .gantt-zoom button:disabled:hover{background:var(--surface);color:var(--muted);}
+  .gantt-export-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:6px 11px;
+    cursor:pointer;
+  }
+  .gantt-export-btn:hover{background:var(--not-started-soft);color:var(--ink);}
+  .gantt-export-btn:disabled{opacity:.5;cursor:default;}
+  .gantt-export-btn svg{flex-shrink:0;opacity:.8;}
+
+  .export-board-list{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    max-height:240px;
+    overflow-y:auto;
+    margin-bottom:16px;
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:6px;
+  }
+  .export-board-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:7px 8px;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:500;
+    color:var(--ink);
+  }
+  .export-board-row:hover{background:var(--not-started-soft);}
+  .export-board-row input{cursor:pointer;margin:0;flex-shrink:0;}
+  .export-board-swatch{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .export-board-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .export-board-count{margin-left:auto;font-size:11.5px;color:var(--muted-2);flex-shrink:0;}
   .gantt-legend{display:flex;gap:14px;flex-wrap:wrap;}
   .gantt-legend span{
     display:flex;align-items:center;gap:5px;
@@ -1226,6 +1271,10 @@
             <button type="button" id="ganttZoomOut" title="Zoom out" aria-label="Zoom out">&minus;</button>
             <button type="button" id="ganttZoomIn" title="Zoom in" aria-label="Zoom in">+</button>
           </div>
+          <button type="button" class="gantt-export-btn" id="ganttExportBtn" title="Download as Excel">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1V9M7 9L4 6M7 9L10 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 10V12.5H12.5V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Excel
+          </button>
         </div>
         <div class="gantt-legend">
           <span><i class="lg-not-started"></i>Not started</span>
@@ -1236,7 +1285,7 @@
       <div class="gantt-overlay-controls" id="ganttOverlayControls" style="display:none;"></div>
       <div id="ganttBody"></div>
     </div>
-    <p class="gantt-hint">Tasks are ordered by closest due date. Add a start date on a card to give its bar a length; tasks with only a due date show as a diamond. Toggle another board to overlay its tasks (shown hatched). Click a task to jump to its card.</p>
+    <p class="gantt-hint">Tasks are ordered by closest due date. Add a start date on a card to give its bar a length; tasks with only a due date show as a diamond. Toggle another board to overlay its tasks (shown hatched). Click a task to jump to its card, or use <strong>Excel</strong> to download the chart.</p>
   </section>
 </div>
 
@@ -1260,6 +1309,18 @@
     <div class="modal-actions">
       <button class="cancel-btn" id="boardCancel">Cancel</button>
       <button class="claim-btn" id="boardConfirm">Create board</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ganttExportOverlay">
+  <div class="claim-modal">
+    <h2>Download Gantt as Excel</h2>
+    <p>Choose which boards' tasks to include. Only tasks with a due date appear on the chart sheet.</p>
+    <div class="export-board-list" id="exportBoardList"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" id="ganttExportCancel">Cancel</button>
+      <button class="claim-btn" id="ganttExportConfirm">Download</button>
     </div>
   </div>
 </div>
@@ -1529,6 +1590,266 @@
   }
   document.getElementById('ganttZoomIn').addEventListener('click', function(){ zoomGantt(GANTT_ZOOM_STEP); });
   document.getElementById('ganttZoomOut').addEventListener('click', function(){ zoomGantt(1 / GANTT_ZOOM_STEP); });
+
+  /* ---- Gantt: export to Excel ---- */
+  const EXCELJS_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+  const EXPORT_STATUS_ARGB = {
+    'not-started': 'FF64748B',
+    'in-progress': 'FFD97706',
+    'completed':   'FF059669'
+  };
+  const EXPORT_STATUS_LABEL = {
+    'not-started': 'Not started',
+    'in-progress': 'In progress',
+    'completed':   'Completed'
+  };
+  let exceljsLoadPromise = null;
+  function loadExcelJS(){
+    if(window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    if(exceljsLoadPromise) return exceljsLoadPromise;
+    exceljsLoadPromise = new Promise(function(resolve, reject){
+      const s = document.createElement('script');
+      s.src = EXCELJS_SRC;
+      s.onload = function(){ window.ExcelJS ? resolve(window.ExcelJS) : reject(new Error('ExcelJS missing')); };
+      s.onerror = function(){ exceljsLoadPromise = null; reject(new Error('Failed to load ExcelJS')); };
+      document.head.appendChild(s);
+    });
+    return exceljsLoadPromise;
+  }
+
+  function openGanttExportModal(){
+    const listEl = document.getElementById('exportBoardList');
+    const preChecked = new Set([activeBoardId]);
+    ganttOverlayBoardIds.forEach(id => preChecked.add(id));
+    listEl.innerHTML = boards.map(b => {
+      const dated = b.tasks.filter(t => t.due).length;
+      return '<label class="export-board-row">'+
+        '<input type="checkbox" value="'+b.id+'"'+(preChecked.has(b.id) ? ' checked' : '')+'>'+
+        '<span class="export-board-swatch" style="background:'+boardColor(b.id)+'"></span>'+
+        '<span class="export-board-name">'+escapeHtml(b.name)+'</span>'+
+        '<span class="export-board-count">'+dated+' dated</span>'+
+      '</label>';
+    }).join('');
+    listEl.querySelectorAll('input').forEach(cb => cb.addEventListener('change', refreshExportConfirmState));
+    refreshExportConfirmState();
+    document.getElementById('ganttExportOverlay').classList.add('open');
+  }
+  function closeGanttExportModal(){
+    document.getElementById('ganttExportOverlay').classList.remove('open');
+  }
+  function selectedExportBoardIds(){
+    return [].slice.call(document.querySelectorAll('#exportBoardList input:checked')).map(cb => cb.value);
+  }
+  function refreshExportConfirmState(){
+    document.getElementById('ganttExportConfirm').disabled = selectedExportBoardIds().length === 0;
+  }
+
+  async function confirmGanttExport(){
+    const ids = selectedExportBoardIds();
+    if(ids.length === 0) return;
+    const btn = document.getElementById('ganttExportConfirm');
+    const restore = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Preparing…';
+    try {
+      const ExcelJS = await loadExcelJS();
+      const selected = boards.filter(b => ids.indexOf(b.id) !== -1);
+      const { workbook, filename, datedCount } = buildGanttWorkbook(ExcelJS, selected);
+      if(datedCount === 0){
+        alert('None of the selected boards have tasks with a due date, so there is nothing to chart.');
+        return;
+      }
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      closeGanttExportModal();
+    } catch (err) {
+      console.error('Gantt export failed:', err);
+      alert('Could not build the Excel file. If you are offline, the spreadsheet library can\'t be downloaded.');
+    } finally {
+      btn.textContent = restore;
+      refreshExportConfirmState();
+    }
+  }
+
+  // Build a Date at UTC midnight from a 'YYYY-MM-DD' key so ExcelJS writes the
+  // same calendar day regardless of the viewer's timezone.
+  function excelDate(key){
+    const p = key.split('-');
+    return new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2])));
+  }
+
+  function buildGanttWorkbook(ExcelJS, selectedBoards){
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Minutemen Racing Tasks';
+    workbook.created = new Date();
+
+    const all = [];
+    selectedBoards.forEach(b => {
+      b.tasks.forEach(t => all.push({ t: t, boardName: b.name, boardId: b.id }));
+    });
+
+    const dated = all.filter(e => e.t.due).slice().sort((a, b) => {
+      if(a.t.due !== b.t.due) return a.t.due < b.t.due ? -1 : 1;
+      const as = a.t.start || a.t.due, bs = b.t.start || b.t.due;
+      if(as !== bs) return as < bs ? -1 : 1;
+      return (a.t.title || '').localeCompare(b.t.title || '');
+    });
+    const undated = all.filter(e => !e.t.due)
+      .sort((a, b) => (a.t.title || '').localeCompare(b.t.title || ''));
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const isOverdue = t => t.due && parseDateKey(t.due) < today && t.status !== 'completed';
+
+    /* ---------- Sheet 1: Tasks ---------- */
+    const ws = workbook.addWorksheet('Tasks', { views: [{ state: 'frozen', ySplit: 1 }] });
+    ws.columns = [
+      { header: 'Board', key: 'board', width: 20 },
+      { header: 'Task', key: 'task', width: 40 },
+      { header: 'Status', key: 'status', width: 14 },
+      { header: 'Assignee', key: 'assignee', width: 16 },
+      { header: 'Start', key: 'start', width: 13 },
+      { header: 'Due', key: 'due', width: 13 },
+      { header: 'Duration (days)', key: 'days', width: 15 },
+      { header: 'Tags', key: 'tags', width: 26 }
+    ];
+    ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4338CA' } };
+    ws.getRow(1).alignment = { vertical: 'middle' };
+
+    function addTaskRow(e){
+      const t = e.t;
+      const row = ws.addRow({
+        board: e.boardName,
+        task: t.title || 'Untitled task',
+        status: EXPORT_STATUS_LABEL[t.status] || t.status || '',
+        assignee: t.assignee || '',
+        start: t.start ? excelDate(t.start) : null,
+        due: t.due ? excelDate(t.due) : null,
+        days: (t.start && t.due) ? (dayDiff(parseDateKey(t.start), parseDateKey(t.due)) + 1) : null,
+        tags: Array.isArray(t.tags) ? t.tags.join(', ') : ''
+      });
+      row.getCell('start').numFmt = 'yyyy-mm-dd';
+      row.getCell('due').numFmt = 'yyyy-mm-dd';
+      const sc = EXPORT_STATUS_ARGB[t.status];
+      if(sc) row.getCell('status').font = { color: { argb: sc }, bold: true };
+      if(isOverdue(t)) row.getCell('due').font = { color: { argb: 'FFDC2626' }, bold: true };
+    }
+    dated.forEach(addTaskRow);
+    undated.forEach(addTaskRow);
+    ws.autoFilter = { from: 'A1', to: 'H1' };
+
+    /* ---------- Sheet 2: Gantt chart ---------- */
+    if(dated.length > 0){
+      let minT = Infinity, maxT = -Infinity;
+      dated.forEach(e => {
+        const dueT = parseDateKey(e.t.due).getTime();
+        const startT = e.t.start ? parseDateKey(e.t.start).getTime() : dueT;
+        minT = Math.min(minT, startT, dueT);
+        maxT = Math.max(maxT, startT, dueT);
+      });
+      const rangeStart = new Date(minT);
+      const totalDays = Math.round((maxT - minT) / DAY_MS) + 1;
+
+      const gs = workbook.addWorksheet('Gantt chart', {
+        views: [{ state: 'frozen', xSplit: 2, ySplit: 1 }]
+      });
+      const dayCols = [];
+      for(let i = 0; i < totalDays; i++){
+        dayCols.push(new Date(rangeStart.getTime() + i * DAY_MS));
+      }
+      gs.columns = [
+        { header: 'Board', width: 18 },
+        { header: 'Task', width: 34 }
+      ].concat(dayCols.map(d => ({
+        header: (d.getMonth() + 1) + '/' + d.getDate(),
+        width: 3.4
+      })));
+
+      const headRow = gs.getRow(1);
+      headRow.font = { bold: true, size: 9 };
+      headRow.alignment = { vertical: 'bottom', horizontal: 'center', textRotation: 90 };
+      headRow.height = 46;
+      headRow.getCell(1).alignment = { vertical: 'middle', textRotation: 0 };
+      headRow.getCell(2).alignment = { vertical: 'middle', textRotation: 0 };
+      // mark weekends + today in the header
+      dayCols.forEach((d, i) => {
+        const cell = headRow.getCell(i + 3);
+        const wknd = d.getDay() === 0 || d.getDay() === 6;
+        const isToday = d.getTime() === today.getTime();
+        if(isToday){
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4338CA' } };
+          cell.font = { bold: true, size: 9, color: { argb: 'FFFFFFFF' } };
+        } else if(wknd){
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDEFF3' } };
+        }
+      });
+
+      dated.forEach(e => {
+        const t = e.t;
+        const row = gs.addRow([e.boardName, t.title || 'Untitled task']);
+        row.height = 16;
+        if(isOverdue(t)) row.getCell(2).font = { color: { argb: 'FFDC2626' }, bold: true };
+        const argb = EXPORT_STATUS_ARGB[t.status] || 'FF64748B';
+        const dueIdx = Math.round((parseDateKey(t.due).getTime() - minT) / DAY_MS);
+        const startIdx = t.start
+          ? Math.round((parseDateKey(t.start).getTime() - minT) / DAY_MS)
+          : dueIdx;
+        const from = Math.min(startIdx, dueIdx);
+        const to = Math.max(startIdx, dueIdx);
+        for(let i = 0; i < totalDays; i++){
+          const cell = row.getCell(i + 3);
+          const d = dayCols[i];
+          const wknd = d.getDay() === 0 || d.getDay() === 6;
+          if(i >= from && i <= to){
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: argb } };
+          } else if(wknd){
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F6F8' } };
+          }
+        }
+      });
+
+      // legend
+      gs.addRow([]);
+      const legendHead = gs.addRow(['Legend']);
+      legendHead.getCell(1).font = { bold: true };
+      STATUSES.forEach(s => {
+        const lr = gs.addRow(['', EXPORT_STATUS_LABEL[s]]);
+        lr.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXPORT_STATUS_ARGB[s] } };
+      });
+      const noteRow = gs.addRow(['', 'Tasks with only a due date are shown as a single day.']);
+      noteRow.getCell(2).font = { italic: true, color: { argb: 'FF6B7280' } };
+    }
+
+    const stamp = fmtDateKey(new Date());
+    const name = selectedBoards.length === 1
+      ? selectedBoards[0].name.replace(/[\\/:*?"<>|]+/g, '-')
+      : selectedBoards.length + ' boards';
+    return {
+      workbook: workbook,
+      filename: 'Gantt - ' + name + ' - ' + stamp + '.xlsx',
+      datedCount: dated.length
+    };
+  }
+
+  document.getElementById('ganttExportBtn').addEventListener('click', openGanttExportModal);
+  document.getElementById('ganttExportCancel').addEventListener('click', closeGanttExportModal);
+  document.getElementById('ganttExportConfirm').addEventListener('click', confirmGanttExport);
+  document.getElementById('ganttExportOverlay').addEventListener('click', function(e){
+    if(e.target === this) closeGanttExportModal();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && document.getElementById('ganttExportOverlay').classList.contains('open')){
+      closeGanttExportModal();
+    }
+  });
 
   function pad2(n){ return n < 10 ? '0' + n : '' + n; }
   function fmtDateKey(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
