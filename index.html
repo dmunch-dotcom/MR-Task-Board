@@ -1337,6 +1337,17 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="serverTimeoutOverlay">
+  <div class="claim-modal">
+    <h2>Server connection timed out</h2>
+    <p>Nothing has been saved to the server for 15 minutes, so the connection may have gone stale. Refresh the page to reconnect and make sure new changes are saved.</p>
+    <div class="modal-actions">
+      <button class="cancel-btn" id="serverTimeoutDismiss">Keep working</button>
+      <button class="claim-btn" id="serverTimeoutRefresh">Refresh page</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   const STATUSES = ["not-started","in-progress","completed"];
@@ -1393,6 +1404,7 @@
       const response = await fetch('/api/data');
       if (!response.ok) throw new Error('Failed to load');
       const data = await response.json();
+      noteServerActivity();
       boards = Array.isArray(data) && data.length > 0 ? data : [
         {
           id: cryptoId(),
@@ -1421,11 +1433,39 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(boards)
       });
-      if (!response.ok) console.error('Save HTTP error');
+      if (response.ok) noteServerActivity();
+      else console.error('Save HTTP error');
     } catch (e) {
       console.error('Save failed:', e);
     }
   }
+
+  /* ---- Server idle / timeout warning ----
+     If nothing has been read from or written to the server for 15 minutes,
+     the connection (and the pooled DB connection behind it) may have gone
+     stale, so warn the user to refresh. Every successful /api/data request
+     resets the countdown. */
+  const SERVER_IDLE_MS = 15 * 60 * 1000;
+  let serverIdleTimer = null;
+
+  function armServerIdleTimer(){
+    if (serverIdleTimer) clearTimeout(serverIdleTimer);
+    serverIdleTimer = setTimeout(function(){
+      document.getElementById('serverTimeoutOverlay').classList.add('open');
+    }, SERVER_IDLE_MS);
+  }
+  function noteServerActivity(){
+    document.getElementById('serverTimeoutOverlay').classList.remove('open');
+    armServerIdleTimer();
+  }
+
+  document.getElementById('serverTimeoutRefresh').addEventListener('click', function(){
+    location.reload();
+  });
+  document.getElementById('serverTimeoutDismiss').addEventListener('click', function(){
+    document.getElementById('serverTimeoutOverlay').classList.remove('open');
+    armServerIdleTimer();
+  });
 
   function getActiveBoard(){ return boards.find(b => b.id === activeBoardId); }
   function getTask(id){
@@ -2621,6 +2661,7 @@
   });
 
   // Initial load and render
+  armServerIdleTimer();
   loadData().then(() => {
     render();
   });
